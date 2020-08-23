@@ -80,7 +80,11 @@ class Items:
         listitem = xbmcgui.ListItem()
         listitem.setContentLookup(False)
         listitem.setMimeType('application/dash+xml')
+        # ideprecated inputstreamaddon property
+        # https://forum.kodi.tv/showthread.php?tid=353560
+        # https://github.com/xbmc/xbmc/pull/18020
         listitem.setProperty('inputstreamaddon', 'inputstream.adaptive')
+        listitem.setProperty('inputstream', 'inputstream.adaptive')
         listitem.setProperty('inputstream.adaptive.manifest_type', 'mpd')
         listitem.setProperty('inputstream.adaptive.manifest_update_parameter', 'full')
         listitem.setProperty('inputstream.adaptive.max_bandwidth', self.plugin.max_bw)
