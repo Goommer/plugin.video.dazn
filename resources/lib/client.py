@@ -25,17 +25,9 @@ class Client:
             '$format': 'json'
         }
 
-        self.STARTUP = self.plugin.api_base + 'v5/Startup'
-        self.RAIL = self.plugin.api_base + 'v2/Rail'
-        self.RAILS = self.plugin.api_base + 'v7/Rails'
-        self.EPG = self.plugin.api_base + 'v1/Epg'
-        self.EVENT = self.plugin.api_base + 'v2/Event'
-        self.PLAYBACK = 'https://api.playback.indazn.com/v3/Playback'
-        self.SIGNIN = self.plugin.api_base + 'v5/SignIn'
-        self.SIGNOUT = self.plugin.api_base + 'v1/SignOut'
-        self.REFRESH = self.plugin.api_base + 'v5/RefreshAccessToken'
-        self.PROFILE = self.plugin.api_base + 'v1/UserProfile'
-        self.RESOURCES = self.plugin.api_base + 'v1/ResourceStrings'
+        self.SERVICES = self.plugin.get_cache('services')
+        if not self.SERVICES:
+            self.SERVICES = {'Startup': self.plugin.api_base + 'v5/Startup'}
 
     def content_data(self, url):
         data = self.request(url)
@@ -47,32 +39,32 @@ class Client:
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['groupId'] = id_
         self.PARAMS['params'] = params
-        return self.content_data(self.RAILS)
+        return self.content_data(self.SERVICES['Rails'])
 
     def rail(self, id_, params=''):
         self.PARAMS['LanguageCode'] = self.LANGUAGE
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['id'] = id_
         self.PARAMS['params'] = params
-        return self.content_data(self.RAIL)
+        return self.content_data(self.SERVICES['Rail'])
 
     def epg(self, params):
         self.PARAMS['languageCode'] = self.LANGUAGE
         self.PARAMS['country'] = self.COUNTRY
         self.PARAMS['date'] = params
-        return self.content_data(self.EPG)
+        return self.content_data(self.SERVICES['Epg'])
 
     def event(self, id_):
         self.PARAMS['LanguageCode'] = self.LANGUAGE
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['Id'] = id_
-        return self.content_data(self.EVENT)
+        return self.content_data(self.SERVICES['Event'])
 
     def resources(self):
         self.PARAMS['languageCode'] = self.LANGUAGE
         self.PARAMS['region'] = self.COUNTRY
         self.PARAMS['platform'] = 'web'
-        self.plugin.cache(self.RESOURCES, self.content_data(self.RESOURCES))
+        self.plugin.cache(self.SERVICES['ResourceStrings'], self.content_data(self.SERVICES['ResourceStrings']))
 
     def playback_data(self, id_):
         self.HEADERS['Authorization'] = 'Bearer ' + self.TOKEN
@@ -83,7 +75,7 @@ class Client:
         self.PARAMS['PlayerId'] = 'DAZN-' + self.DEVICE_ID
         self.PARAMS['Secure'] = 'true'
         self.PARAMS['PlayReadyInitiator'] = 'false'
-        return self.request(self.PLAYBACK)
+        return self.request(self.SERVICES['Playback'])
 
     def playback(self, id_, pin):
         if self.plugin.validate_pin(pin):
@@ -97,7 +89,7 @@ class Client:
             
     def userProfile(self):
         self.HEADERS['Authorization'] = 'Bearer ' + self.TOKEN
-        data = self.request(self.PROFILE)
+        data = self.request(self.SERVICES['UserProfile'])
         if data.get('odata.error', None):
             self.errorHandler(data)
         else:
@@ -136,7 +128,7 @@ class Client:
                 'DeviceId': self.DEVICE_ID,
                 'Platform': 'web'
             }
-            data = self.request(self.SIGNIN)
+            data = self.request(self.SERVICES['SignIn'])
             if data.get('odata.error', None):
                 self.errorHandler(data)
             else:
@@ -149,7 +141,7 @@ class Client:
         self.POST_DATA = {
             'DeviceId': self.DEVICE_ID
         }
-        r = self.request(self.SIGNOUT)
+        r = self.request(self.SERVICES['SignOut'])
         self.TOKEN = ''
         self.plugin.set_setting('token', self.TOKEN)
         self.plugin.set_setting('mpx', '')
@@ -159,7 +151,7 @@ class Client:
         self.POST_DATA = {
             'DeviceId': self.DEVICE_ID
         }
-        data = self.request(self.REFRESH)
+        data = self.request(self.SERVICES['RefreshAccessToken'])
         if data.get('odata.error', None):
             self.signOut()
             self.errorHandler(data)
@@ -174,7 +166,13 @@ class Client:
             'Manufacturer': '',
             'PromoCode': ''
         }
-        data = self.request(self.STARTUP)
+        data = self.request(self.SERVICES['Startup'])
+        sd = data.get('ServiceDictionary', {})
+        if sd:
+            for key, value in sd.items():
+                last = sorted(list(sd.get(key).get('Versions')))[-1]
+                self.SERVICES[key] = sd.get(key).get('Versions').get(last).get('ServicePath')
+            self.plugin.cache('services', self.SERVICES)
         region = data.get('Region', {})
         if region:
             self.PORTABILITY = region['CountryPortabilityStatus']
