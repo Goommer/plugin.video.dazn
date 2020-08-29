@@ -64,7 +64,7 @@ class Client:
         self.PARAMS['languageCode'] = self.LANGUAGE
         self.PARAMS['region'] = self.COUNTRY
         self.PARAMS['platform'] = 'web'
-        self.plugin.cache(self.SERVICES['ResourceStrings'], self.content_data(self.SERVICES['ResourceStrings']))
+        self.plugin.cache('ResourceStrings', self.content_data(self.SERVICES['ResourceStrings']))
 
     def playback_data(self, id_):
         self.HEADERS['Authorization'] = 'Bearer ' + self.TOKEN
