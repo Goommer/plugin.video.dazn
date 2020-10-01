@@ -27,7 +27,7 @@ class Client:
 
         self.SERVICES = self.plugin.get_cache('services')
         if not self.SERVICES:
-            self.SERVICES = {'Startup': self.plugin.api_base + 'v5/Startup'}
+            self.SERVICES = {'Startup': 'https://startup.core.indazn.com/misl/v5/Startup'}
 
     def content_data(self, url):
         data = self.request(url)
