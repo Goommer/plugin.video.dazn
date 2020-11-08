@@ -38,7 +38,7 @@ class Tiles:
             self.item['duration'] = self.plugin.timedelta_total_seconds(self.plugin.time_stamp(self.end)-self.plugin.time_stamp(self.start))
 
     def add_thumb(self, i):
-        url = self.plugin.api_base+'v2/image?id={0}&Quality=95&Width={1}&Height={2}&ResizeAction=fill&VerticalAlignment=top&Format={3}'
+        url = self.plugin.get_service('img')+'/?id={0}&Quality=95&Width={1}&Height={2}&ResizeAction=fill&VerticalAlignment=top&Format={3}'
         image = i.get('Image', '')
         if image:
             if self.type == 'Navigation':
