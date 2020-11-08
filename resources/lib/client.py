@@ -25,10 +25,6 @@ class Client:
             '$format': 'json'
         }
 
-        self.SERVICES = self.plugin.get_cache('services')
-        if not self.SERVICES:
-            self.SERVICES = {'Startup': 'https://startup.core.indazn.com/misl/v5/Startup'}
-        self.SERVICES['Startup'] = 'https://startup.core.indazn.com/misl/v5/Startup'
 
     def content_data(self, url):
         data = self.request(url)
@@ -40,32 +36,32 @@ class Client:
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['groupId'] = id_
         self.PARAMS['params'] = params
-        return self.content_data(self.SERVICES['Rails'])
+        return self.content_data(self.plugin.get_service('Rails'))
 
     def rail(self, id_, params=''):
         self.PARAMS['LanguageCode'] = self.LANGUAGE
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['id'] = id_
         self.PARAMS['params'] = params
-        return self.content_data(self.SERVICES['Rail'])
+        return self.content_data(self.plugin.get_service('Rail'))
 
     def epg(self, params):
         self.PARAMS['languageCode'] = self.LANGUAGE
         self.PARAMS['country'] = self.COUNTRY
         self.PARAMS['date'] = params
-        return self.content_data(self.SERVICES['Epg'])
+        return self.content_data(self.plugin.get_service('Epg'))
 
     def event(self, id_):
         self.PARAMS['LanguageCode'] = self.LANGUAGE
         self.PARAMS['Country'] = self.COUNTRY
         self.PARAMS['Id'] = id_
-        return self.content_data(self.SERVICES['Event'])
+        return self.content_data(self.plugin.get_service('Event'))
 
     def resources(self):
         self.PARAMS['languageCode'] = self.LANGUAGE
         self.PARAMS['region'] = self.COUNTRY
         self.PARAMS['platform'] = 'web'
-        self.plugin.cache('ResourceStrings', self.content_data(self.SERVICES['ResourceStrings']))
+        self.plugin.cache('ResourceStrings', self.content_data(self.plugin.get_service('ResourceStrings')))
 
     def playback_data(self, id_):
         self.HEADERS['Authorization'] = 'Bearer ' + self.TOKEN
@@ -76,7 +72,7 @@ class Client:
         self.PARAMS['PlayerId'] = 'DAZN-' + self.DEVICE_ID
         self.PARAMS['Secure'] = 'true'
         self.PARAMS['PlayReadyInitiator'] = 'false'
-        return self.request(self.SERVICES['Playback'])
+        return self.request(self.plugin.get_service('Playback'))
 
     def playback(self, id_, pin):
         if self.plugin.validate_pin(pin):
@@ -90,7 +86,7 @@ class Client:
             
     def userProfile(self):
         self.HEADERS['Authorization'] = 'Bearer ' + self.TOKEN
-        data = self.request(self.SERVICES['UserProfile'])
+        data = self.request(self.plugin.get_service('UserProfile'))
         if data.get('odata.error', None):
             self.errorHandler(data)
         else:
@@ -129,7 +125,7 @@ class Client:
                 'DeviceId': self.DEVICE_ID,
                 'Platform': 'web'
             }
-            data = self.request(self.SERVICES['SignIn'])
+            data = self.request(self.plugin.get_service('SignIn'))
             if data.get('odata.error', None):
                 self.errorHandler(data)
             else:
@@ -142,7 +138,7 @@ class Client:
         self.POST_DATA = {
             'DeviceId': self.DEVICE_ID
         }
-        r = self.request(self.SERVICES['SignOut'])
+        r = self.request(self.plugin.get_service('SignOut'))
         self.TOKEN = ''
         self.plugin.set_setting('token', self.TOKEN)
         self.plugin.set_setting('mpx', '')
@@ -152,7 +148,7 @@ class Client:
         self.POST_DATA = {
             'DeviceId': self.DEVICE_ID
         }
-        data = self.request(self.SERVICES['RefreshAccessToken'])
+        data = self.request(self.plugin.get_service('RefreshAccessToken'))
         if data.get('odata.error', None):
             self.signOut()
             self.errorHandler(data)
@@ -167,13 +163,10 @@ class Client:
             'Manufacturer': '',
             'PromoCode': ''
         }
-        data = self.request(self.SERVICES['Startup'])
+        data = self.request(self.plugin.get_service('Startup'))
         sd = data.get('ServiceDictionary', {})
         if sd:
-            for key, value in sd.items():
-                last = sorted(list(sd.get(key).get('Versions')))[-1]
-                self.SERVICES[key] = sd.get(key).get('Versions').get(last).get('ServicePath')
-            self.plugin.cache('services', self.SERVICES)
+            self.plugin.set_services( sd )
         region = data.get('Region', {})
         if region:
             self.PORTABILITY = region['CountryPortabilityStatus']

@@ -45,6 +45,17 @@ class Common:
         self.preferred_cdn = self.addon.getSetting('preferred_cdn')
         self.max_bw = self.addon.getSetting('max_bw')
 
+        self.services = self.get_cache('services')
+        if not self.services:
+            self.services = {}
+        # TODO: put this in settings
+        self.services['Startup'] = 'https://startup.core.indazn.com/misl/v5/Startup'
+
+        self.service_version_fix = {
+            'img': 'v2'
+        }
+
+
     def log(self, msg):
         xbmc.log(msg, xbmc.LOGDEBUG)
 
@@ -300,3 +311,19 @@ class Common:
             return True
         except ValueError:
             return result
+
+    def get_services(self):
+        return self.services
+
+    def set_services(self, sd):
+        for key, value in sd.items():
+            if key in self.service_version_fix:
+                version = self.service_version_fix[key]
+            else:
+                version = sorted(list(sd.get(key).get('Versions')))[-1]
+            self.services[key] = sd.get(key).get('Versions').get(version).get('ServicePath')
+        self.log('[{0}] service: {1} {2} {3}'.format(self.addon_id, key, version, self.services[key]))
+        self.cache('services', self.services)
+
+    def get_service(self, serv):
+        return self.services[serv]
